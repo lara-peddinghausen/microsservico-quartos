@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model cama {
+  id             BigInt         @id @default(autoincrement())
+  id_tipo_quarto BigInt
+  tipo_cama      cama_tipo_cama
+  quantidade     Int
+  tipo_quarto    tipo_quarto    @relation(fields: [id_tipo_quarto], references: [id], onUpdate: Restrict, map: "fk_cama_tipo_quarto")
+
+  @@index([id_tipo_quarto], map: "idx_cama_tipo_quarto")
+}
+
+model comodidade {
+  id                     BigInt                   @id @default(autoincrement())
+  nome                   String                   @unique(map: "uk_comodidade_nome") @db.VarChar(100)
+  tipo_quarto_comodidade tipo_quarto_comodidade[]
+}
+
+model foto {
+  id             BigInt      @id @default(autoincrement())
+  id_tipo_quarto BigInt
+  imagem         String      @db.Text
+  tipo_quarto    tipo_quarto @relation(fields: [id_tipo_quarto], references: [id], onUpdate: Restrict, map: "fk_foto_tipo_quarto")
+
+  @@index([id_tipo_quarto], map: "idx_foto_tipo_quarto")
+}
+
+model quarto {
+  id              BigInt                 @id @default(autoincrement())
+  id_tipo_quarto  BigInt
+  numero          Int                    @unique(map: "uk_quarto_numero")
+  status          quarto_status
+  disponibilidade quarto_disponibilidade
+  tipo_quarto     tipo_quarto            @relation(fields: [id_tipo_quarto], references: [id], onUpdate: Restrict, map: "fk_quarto_tipo_quarto")
+
+  @@index([disponibilidade], map: "idx_quarto_disponibilidade")
+  @@index([status], map: "idx_quarto_status")
+  @@index([status, disponibilidade], map: "idx_quarto_status_disponibilidade")
+  @@index([id_tipo_quarto], map: "idx_quarto_tipo")
+}
+
+model tipo_quarto {
+  id                     BigInt                   @id @default(autoincrement())
+  nome                   String                   @unique(map: "uk_tipo_quarto_nome") @db.VarChar(100)
+  descricao              String?                  @db.VarChar(500)
+  capacidade_maxima      Int
+  acessibilidade         Boolean
+  preco_diaria           Decimal                  @db.Decimal(10, 2)
+  area                   Decimal?                 @db.Decimal(10, 2)
+  cama                   cama[]
+  foto                   foto[]
+  quarto                 quarto[]
+  tipo_quarto_comodidade tipo_quarto_comodidade[]
+}
+
+model tipo_quarto_comodidade {
+  id_tipo_quarto BigInt
+  id_comodidade  BigInt
+  comodidade     comodidade  @relation(fields: [id_comodidade], references: [id], onUpdate: Restrict, map: "fk_tqc_comodidade")
+  tipo_quarto    tipo_quarto @relation(fields: [id_tipo_quarto], references: [id], onUpdate: Restrict, map: "fk_tqc_tipo_quarto")
+
+  @@id([id_tipo_quarto, id_comodidade])
+  @@index([id_comodidade], map: "idx_tqc_comodidade")
+}
+
+enum cama_tipo_cama {
+  CASAL
+  SOLTEIRO
+  QUEEN_SIZE
+  KING_SIZE
+}
+
+enum quarto_status {
+  ATIVO
+  INATIVO
+}
+
+enum quarto_disponibilidade {
+  DISPONIVEL
+  INDISPONIVEL
+}
