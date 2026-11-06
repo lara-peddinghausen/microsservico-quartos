@@ -11,8 +11,19 @@
 
 # Arquivos gerados automaticamente
 /src/generated
+/prisma/src/generated/prisma
 *.log
 
 # Arquivos do sistema operacional
 .DS_Store
 Thumbs.db
+
+# Configurações e instruções de agentes de IA
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
+
+# Outras ferramentas de IA
+.cursor/
+.github/skills/
