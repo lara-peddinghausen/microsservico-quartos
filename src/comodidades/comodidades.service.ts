@@ -24,7 +24,9 @@ export class ComodidadesService {
         });
 
         if (!comodidade) {
-            throw new NotFoundException('Comodidade não encontrada');
+            throw new NotFoundException(
+                'Comodidade não encontrada',
+            );
         }
 
         return {

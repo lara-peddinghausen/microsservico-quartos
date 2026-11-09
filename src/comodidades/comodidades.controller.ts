@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Post } from '@nestjs/common';
-import { ComodidadesService } from './comodidades.service';
-import { CreateComodidadeDto } from './dto/create-comodidades.dto';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import { ComodidadesService } from './comodidades.service.js';
+import { CreateComodidadeDto } from './dto/create-comodidades.dto.js';
+import { ParseBigIntPipe } from '../common/pipes/parse-bigint.pipe.js';
 
 @Controller('comodidades')
 export class ComodidadesController {
@@ -15,23 +16,21 @@ export class ComodidadesController {
 
   @Get(':id')
   findById(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseBigIntPipe) id: bigint,
   ) {
-    return this.comodidadesService.findById(BigInt(id));
+    return this.comodidadesService.findById(id);
   }
 
   @Post()
-  create(
-    @Body() data: CreateComodidadeDto,
-  ) {
+  create(@Body() data: CreateComodidadeDto) {
     return this.comodidadesService.create(data);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseBigIntPipe) id: bigint,
   ) {
-    await this.comodidadesService.delete(BigInt(id));
+    await this.comodidadesService.delete(id);
   }
 }
