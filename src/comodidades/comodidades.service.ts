@@ -71,11 +71,9 @@ export class ComodidadesService {
             throw new NotFoundException('Comodidade não encontrada');
         }
 
-        // Verifica se está vinculada a algum tipo de quarto
+        // Verifica se possui vínculos com tipos de quarto
         const vinculacao = await this.prisma.tipo_quarto_comodidade.findFirst({
-            where: {
-                id_comodidade: id,
-            },
+            where: { id_comodidade: id },
         });
 
         if (vinculacao) {
@@ -84,9 +82,26 @@ export class ComodidadesService {
             );
         }
 
-        // Exclui somente se não houver vínculos
-        await this.prisma.comodidade.delete({
-            where: { id },
-        });
+        try {
+            await this.prisma.comodidade.delete({
+                where: { id },
+            });
+        } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+                if (error.code === 'P2003') {
+                    throw new ConflictException(
+                        'Não é possível excluir uma comodidade vinculada a um tipo de quarto',
+                    );
+                }
+
+                if (error.code === 'P2025') {
+                    throw new NotFoundException(
+                        'Comodidade não encontrada',
+                    );
+                }
+            }
+
+            throw error;
+        }
     }
 }
