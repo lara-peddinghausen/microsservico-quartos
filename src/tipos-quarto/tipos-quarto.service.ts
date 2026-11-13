@@ -16,10 +16,15 @@ export class TiposQuartoService {
             comodidade: true;
           };
         };
+        cama: true;
       };
     }>,
   ) {
-    const { tipo_quarto_comodidade, ...dadosTipoQuarto } = tipoQuarto;
+    const {
+      tipo_quarto_comodidade,
+      cama,
+      ...dadosTipoQuarto
+    } = tipoQuarto;
 
     return {
       ...dadosTipoQuarto,
@@ -28,6 +33,12 @@ export class TiposQuartoService {
       comodidades: tipo_quarto_comodidade.map((associacao) => ({
         id: associacao.comodidade.id.toString(),
         nome: associacao.comodidade.nome,
+      })),
+
+      camas: cama.map((item) => ({
+        id: item.id.toString(),
+        tipo_cama: item.tipo_cama,
+        quantidade: item.quantidade,
       })),
     };
   }
@@ -40,6 +51,7 @@ export class TiposQuartoService {
             comodidade: true,
           },
         },
+        cama: true,
       },
     });
 
@@ -57,6 +69,7 @@ export class TiposQuartoService {
             comodidade: true,
           },
         },
+        cama: true,
       },
     });
 
@@ -68,7 +81,7 @@ export class TiposQuartoService {
   }
 
   async create(data: CreateTipoQuartoDto) {
-    const { comodidades, ...dadosTipoQuarto } = data;  // Separa o array de comodidades dos demais campos, pois comodidades não é uma coluna da tabela tipo_quarto.
+    const { comodidades, camas, ...dadosTipoQuarto } = data;  // Separa o array de comodidades dos demais campos, pois comodidades não é uma coluna da tabela tipo_quarto.
 
     // Verifica se todas as comodidades informadas existem
     if (comodidades?.length) {
@@ -102,6 +115,12 @@ export class TiposQuartoService {
               },
             })),
           },
+          cama: {
+            create: (camas ?? []).map((cama) => ({
+              tipo_cama: cama.tipo_cama,
+              quantidade: cama.quantidade,
+            })),
+          },
         },
         include: {
           tipo_quarto_comodidade: {
@@ -109,6 +128,7 @@ export class TiposQuartoService {
               comodidade: true,
             },
           },
+          cama: true,
         },
       });
 
@@ -133,7 +153,7 @@ export class TiposQuartoService {
   async update(id: bigint, data: UpdateTipoQuartoDto) {
     await this.findById(id);
 
-    const { comodidades, ...dadosTipoQuarto } = data;
+    const { comodidades, camas, ...dadosTipoQuarto } = data;
 
     // Valida se as comodidades informadas existem
     if (comodidades !== undefined) {
@@ -177,6 +197,7 @@ export class TiposQuartoService {
               comodidade: true,
             },
           },
+          cama: true,
         },
       });
 

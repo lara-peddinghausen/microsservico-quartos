@@ -1,16 +1,6 @@
 
 import { Body, Controller, Post, Get, Param, Patch } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiParam,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBadRequestResponse,
-  ApiNotFoundResponse,
-  ApiConflictResponse,
-} from '@nestjs/swagger';
-
+import { ApiTags, ApiOperation, ApiParam, ApiOkResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiNotFoundResponse, ApiConflictResponse } from '@nestjs/swagger';
 import { TiposQuartoService } from './tipos-quarto.service.js';
 import { CreateTipoQuartoDto } from './dto/create-tipo-quarto.dto.js';
 import { UpdateTipoQuartoDto } from './dto/update-tipo-quarto.dto.js';
