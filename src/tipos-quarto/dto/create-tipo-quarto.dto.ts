@@ -1,7 +1,11 @@
-import { IsString, IsNotEmpty, IsInt, IsBoolean, IsOptional, IsNumber, MaxLength, Min, IsArray, ArrayUnique, ValidateIf, Max } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, IsBoolean, IsOptional, IsNumber, MaxLength, Min, IsArray, ArrayUnique, ValidateIf, Max, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { CamaDto } from './cama.dto.js';
 
 export class CreateTipoQuartoDto {
+
+  // Nome
   @ApiProperty({
     description: 'Nome único que identifica a categoria do quarto',
     example: 'Quarto Deluxe',
@@ -16,6 +20,7 @@ export class CreateTipoQuartoDto {
   nome!: string;
 
 
+  // Descrição
   @ApiPropertyOptional({
     description: 'Descrição das características do tipo de quarto',
     example: 'Quarto com vista para o mar',
@@ -29,6 +34,7 @@ export class CreateTipoQuartoDto {
   descricao?: string;
 
 
+  // Capacidade
   @ApiProperty({
     description: 'Número máximo de hóspedes permitidos',
     example: 2,
@@ -42,6 +48,7 @@ export class CreateTipoQuartoDto {
   capacidade_maxima!: number;
 
 
+  // Acessibilidade
   @ApiProperty({
     description: 'Indica se o tipo de quarto possui recursos de acessibilidade',
     example: false
@@ -51,6 +58,7 @@ export class CreateTipoQuartoDto {
   acessibilidade!: boolean;
 
 
+  // Preço da diária
   @ApiProperty({
     description: 'Valor da diária do tipo de quarto em reais (R$)',
     example: 350.00,
@@ -66,6 +74,7 @@ export class CreateTipoQuartoDto {
   preco_diaria!: number;
 
 
+  // Área
   @ApiPropertyOptional({
     description: 'Área do tipo de quarto em metros quadrados (m²)',
     example: 28.5,
@@ -82,6 +91,7 @@ export class CreateTipoQuartoDto {
   area?: number;
 
 
+  // Comodidades
   @ApiPropertyOptional({
     description: 'IDs das comodidades associadas ao tipo de quarto',
     example: [1, 2, 3],
@@ -104,4 +114,21 @@ export class CreateTipoQuartoDto {
     message: 'Cada ID de comodidade excede o limite permitido',
   })
   comodidades?: number[];
+
+
+  // Camas
+  @ApiPropertyOptional({
+    description: 'Configurações de camas do tipo de quarto',
+    type: [CamaDto],
+    example: [
+      { tipo_cama: 'CASAL', quantidade: 1 },
+      { tipo_cama: 'SOLTEIRO', quantidade: 1 },
+    ],
+  })
+
+  @ValidateIf((_, value) => value !== undefined)
+  @IsArray({ message: 'Camas deve ser uma lista de IDs' })
+  @ValidateNested({ each: true })
+  @Type(() => CamaDto)
+  camas?: CamaDto[];
 }
