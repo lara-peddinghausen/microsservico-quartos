@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsInt, IsBoolean, IsOptional, IsNumber, MaxLength, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, IsBoolean, IsOptional, IsNumber, MaxLength, Min, IsArray, ArrayUnique, ValidateIf, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateTipoQuartoDto {
@@ -80,4 +80,28 @@ export class CreateTipoQuartoDto {
     message: 'Área não pode ser menor do que zero',
   })
   area?: number;
+
+
+  @ApiPropertyOptional({
+    description: 'IDs das comodidades associadas ao tipo de quarto',
+    example: [1, 2, 3],
+    type: [Number],
+  })
+
+  @ValidateIf((_, value) => value !== undefined)
+  @IsArray({ message: 'Comodidades deve ser uma lista de IDs' })
+  @ArrayUnique({ message: 'Não é permitido repetir comodidades' })
+  @IsInt({
+    each: true,
+    message: 'Cada ID de comodidade deve ser um número inteiro',
+  })
+  @Min(1, {
+    each: true,
+    message: 'Cada ID de comodidade deve ser maior que zero',
+  })
+  @Max(Number.MAX_SAFE_INTEGER, {
+    each: true,
+    message: 'Cada ID de comodidade excede o limite permitido',
+  })
+  comodidades?: number[];
 }
