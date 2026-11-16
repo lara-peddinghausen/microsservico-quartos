@@ -128,6 +128,9 @@ export class CreateTipoQuartoDto {
 
   @ValidateIf((_, value) => value !== undefined)
   @IsArray({ message: 'Camas deve ser uma lista de IDs' })
+  @ArrayUnique((cama: CamaDto) => cama?.tipo_cama, {
+    message: 'Não é permitido repetir tipos de cama',
+  })
   @ValidateNested({ each: true })
   @Type(() => CamaDto)
   camas?: CamaDto[];

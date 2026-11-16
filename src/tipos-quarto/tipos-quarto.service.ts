@@ -17,12 +17,14 @@ export class TiposQuartoService {
           };
         };
         cama: true;
+        foto: true;
       };
     }>,
   ) {
     const {
       tipo_quarto_comodidade,
       cama,
+      foto,
       ...dadosTipoQuarto
     } = tipoQuarto;
 
@@ -40,6 +42,11 @@ export class TiposQuartoService {
         tipo_cama: item.tipo_cama,
         quantidade: item.quantidade,
       })),
+
+      fotos: foto.map((item) => ({
+        id: item.id.toString(),
+        imagem: item.imagem,
+      })),
     };
   }
 
@@ -52,6 +59,7 @@ export class TiposQuartoService {
           },
         },
         cama: true,
+        foto: true,
       },
     });
 
@@ -70,6 +78,7 @@ export class TiposQuartoService {
           },
         },
         cama: true,
+        foto: true,
       },
     });
 
@@ -129,6 +138,7 @@ export class TiposQuartoService {
             },
           },
           cama: true,
+          foto: true,
         },
       });
 
@@ -147,8 +157,6 @@ export class TiposQuartoService {
       throw error;
     }
   }
-
-
 
   async update(id: bigint, data: UpdateTipoQuartoDto) {
     await this.findById(id);
@@ -208,6 +216,7 @@ export class TiposQuartoService {
             },
           },
           cama: true,
+          foto: true,
         },
       });
 
