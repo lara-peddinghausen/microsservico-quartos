@@ -190,6 +190,16 @@ export class TiposQuartoService {
               })),
             },
           }),
+          // Atualiza as camas somente se o campo for enviado
+          ...(camas !== undefined && {
+            cama: {
+              deleteMany: {}, // Remove as camas anteriores
+              create: camas.map((item) => ({
+                tipo_cama: item.tipo_cama,
+                quantidade: item.quantidade,
+              })),
+            },
+          }),
         },
         include: {
           tipo_quarto_comodidade: {
