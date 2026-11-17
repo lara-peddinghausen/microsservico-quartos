@@ -17,7 +17,11 @@ export class TiposQuartoService {
           };
         };
         cama: true;
-        foto: true;
+        foto: {
+          select: {
+            id: true,
+          },
+        },
       };
     }>,
   ) {
@@ -45,7 +49,7 @@ export class TiposQuartoService {
 
       fotos: foto.map((item) => ({
         id: item.id.toString(),
-        imagem: item.imagem,
+        url: `/tipos-quarto/${tipoQuarto.id.toString()}/fotos/${item.id.toString()}`,
       })),
     };
   }
@@ -59,7 +63,11 @@ export class TiposQuartoService {
           },
         },
         cama: true,
-        foto: true,
+        foto: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
 
@@ -78,7 +86,11 @@ export class TiposQuartoService {
           },
         },
         cama: true,
-        foto: true,
+        foto: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
 
@@ -138,7 +150,11 @@ export class TiposQuartoService {
             },
           },
           cama: true,
-          foto: true,
+          foto: {
+            select: {
+              id: true,
+            },
+          },
         },
       });
 
@@ -216,7 +232,11 @@ export class TiposQuartoService {
             },
           },
           cama: true,
-          foto: true,
+          foto: {
+            select: {
+              id: true,
+            },
+          },
         },
       });
 
