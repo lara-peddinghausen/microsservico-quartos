@@ -1,9 +1,10 @@
 
-import { Body, Controller, Post, Get, Param } from '@nestjs/common';
+import { Body, Controller, Post, Get, Param, Patch  } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOperation, ApiTags, ApiParam, ApiOkResponse } from '@nestjs/swagger';
 import { QuartosService } from './quartos.service';
 import { CreateQuartoDto } from './dto/create-quarto.dto';
 import { ParseBigIntPipe } from '../common/pipes/parse-bigint.pipe';
+import { UpdateQuartoDto } from './dto/update-quarto.dto';
 
 @ApiTags('Quartos')
 @Controller('quartos')
@@ -79,5 +80,38 @@ export class QuartosController {
   findById(@Param('id', ParseBigIntPipe) id: bigint) {
     return this.quartosService.findById(id);
   }
+
+
+@Patch(':id')
+@ApiOperation({
+  summary: 'Atualizar quarto',
+  description:
+    'Atualiza os dados administrativos de um quarto. ' +
+    'A disponibilidade não pode ser alterada diretamente.',
+})
+@ApiParam({
+  name: 'id',
+  description: 'ID do quarto.',
+  example: '1',
+})
+@ApiOkResponse({
+  description: 'Quarto atualizado com sucesso.',
+})
+@ApiBadRequestResponse({
+  description: 'Dados inválidos.',
+})
+@ApiNotFoundResponse({
+  description: 'Quarto ou tipo de quarto não encontrado.',
+})
+@ApiConflictResponse({
+  description: 'Número de quarto já cadastrado.',
+})
+update(
+  @Param('id', ParseBigIntPipe) id: bigint,
+  @Body() dto: UpdateQuartoDto,
+) {
+  return this.quartosService.update(id, dto);
+}
+
 
 }

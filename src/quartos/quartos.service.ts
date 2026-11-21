@@ -3,6 +3,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { quarto_disponibilidade, Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuartoDto } from './dto/create-quarto.dto';
+import { UpdateQuartoDto } from './dto/update-quarto.dto';
 
 @Injectable()
 export class QuartosService {
@@ -135,5 +136,80 @@ export class QuartosService {
       },
     };
   }
+
+
+  async update(id: bigint, dto: UpdateQuartoDto) {
+    // Verifica se o quarto existe
+    const quartoExistente = await this.prisma.quarto.findUnique({
+      where: { id },
+    });
+
+    if (!quartoExistente) {
+      throw new NotFoundException('Quarto não encontrado.');
+    }
+
+    // Verifica se o novo tipo de quarto existe
+    if (dto.id_tipo_quarto !== undefined) {
+      const tipoQuarto = await this.prisma.tipo_quarto.findUnique({
+        where: { id: BigInt(dto.id_tipo_quarto) },
+      });
+
+      if (!tipoQuarto) {
+        throw new NotFoundException('Tipo de quarto não encontrado.');
+      }
+    }
+
+    // Verifica se o número já pertence a outro quarto
+    if (dto.numero !== undefined) {
+      const quartoMesmoNumero = await this.prisma.quarto.findUnique({
+        where: { numero: dto.numero },
+      });
+
+      if (quartoMesmoNumero && quartoMesmoNumero.id !== id) {
+        throw new ConflictException(
+          'Já existe um quarto com esse número.',
+        );
+      }
+    }
+
+    try {
+      const quarto = await this.prisma.quarto.update({
+        where: { id },
+        data: {
+          ...(dto.id_tipo_quarto !== undefined && {
+            id_tipo_quarto: BigInt(dto.id_tipo_quarto),
+          }),
+          ...(dto.numero !== undefined && {
+            numero: dto.numero,
+          }),
+          ...(dto.status !== undefined && {
+            status: dto.status,
+          }),
+        },
+        include: {
+          tipo_quarto: {
+            select: {
+              id: true,
+              nome: true,
+            },
+          },
+        },
+      });
+
+      return this.formatarQuarto(quarto);
+    } catch (erro) {
+      if (
+        erro instanceof Prisma.PrismaClientKnownRequestError &&
+        erro.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'Já existe um quarto com esse número.',
+        );
+      }
+
+      throw erro;
+    }
+  }
+
 
 }
