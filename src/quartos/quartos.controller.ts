@@ -8,6 +8,7 @@ import { UpdateQuartoDto } from './dto/update-quarto.dto';
 import { FiltroQuartosDto } from './dto/filtro-quartos.dto';
 import { UseGuards } from '@nestjs/common';
 import { InternalApiKeyGuard } from '../common/guards/internal-api-key.guard';
+import { validarPeriodo } from '../common/utils/validar-periodo';
 
 @ApiTags('Quartos')
 @Controller('quartos')
@@ -100,31 +101,7 @@ export class QuartosController {
     @Query('checkin') checkin: string,
     @Query('checkout') checkout: string,
   ) {
-    const dataValida = (valor: string): boolean => {
-      if (
-        typeof valor !== 'string' ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(valor)
-      ) {
-        return false;
-      }
-
-      const data = new Date(`${valor}T00:00:00Z`);
-
-      return (
-        !Number.isNaN(data.getTime()) &&
-        data.toISOString().slice(0, 10) === valor
-      );
-    };
-
-    if (
-      !dataValida(checkin) ||
-      !dataValida(checkout) ||
-      checkout <= checkin
-    ) {
-      throw new BadRequestException(
-        'Informe datas válidas, com checkout posterior ao checkin.',
-      );
-    }
+    validarPeriodo(checkin, checkout);
 
     return this.quartosService.findQuartosDisponiveis(
       checkin,

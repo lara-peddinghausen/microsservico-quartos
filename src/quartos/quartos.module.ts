@@ -18,5 +18,6 @@ import { ReservasClientService } from '../integracoes/reservas/reservas-client.s
     PrismaService,
     ReservasClientService,
   ],
+  exports: [QuartosService],
 })
 export class QuartosModule {}

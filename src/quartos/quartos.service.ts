@@ -258,7 +258,10 @@ export class QuartosService {
     }
   }
 
-  async findQuartosDisponiveis(checkin: string, checkout: string) {
+  async buscarQuartosLivresNoPeriodo(
+    checkin: string,
+    checkout: string,
+  ) {
     const quartos = await this.prisma.quarto.findMany({
       where: {
         status: 'ATIVO',
@@ -282,25 +285,30 @@ export class QuartosService {
 
     const idsIndisponiveis = new Set(quartosIndisponiveis);
 
-    return quartos
-      .filter(
-        (quarto) => !idsIndisponiveis.has(quarto.id.toString()),
-      )
-      .map((quarto) => ({
-        id: quarto.id.toString(),
-        id_tipo_quarto: quarto.id_tipo_quarto.toString(),
-        numero: quarto.numero,
-        status: quarto.status,
-        disponibilidade: quarto.disponibilidade,
-        tipo_quarto: {
-          id: quarto.tipo_quarto.id.toString(),
-          nome: quarto.tipo_quarto.nome,
-          capacidade_maxima: quarto.tipo_quarto.capacidade_maxima,
-          preco_diaria: quarto.tipo_quarto.preco_diaria.toString(),
-        },
-      }));
+    return quartos.filter(
+      (quarto) => !idsIndisponiveis.has(quarto.id.toString()),
+    );
   }
 
+  async findQuartosDisponiveis(checkin: string, checkout: string) {
+    const quartos = await this.buscarQuartosLivresNoPeriodo(
+      checkin,
+      checkout,
+    );
 
+    return quartos.map((quarto) => ({
+      id: quarto.id.toString(),
+      id_tipo_quarto: quarto.id_tipo_quarto.toString(),
+      numero: quarto.numero,
+      status: quarto.status,
+      disponibilidade: quarto.disponibilidade,
+      tipo_quarto: {
+        id: quarto.tipo_quarto.id.toString(),
+        nome: quarto.tipo_quarto.nome,
+        capacidade_maxima: quarto.tipo_quarto.capacidade_maxima,
+        preco_diaria: quarto.tipo_quarto.preco_diaria.toString(),
+      },
+    }));
+  }
 
 }
