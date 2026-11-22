@@ -114,6 +114,8 @@ export class QuartosService {
           select: {
             id: true,
             nome: true,
+            capacidade_maxima: true,
+            preco_diaria: true,
           },
         },
       },
@@ -136,6 +138,8 @@ export class QuartosService {
       tipo_quarto: {
         id: bigint;
         nome: string;
+        capacidade_maxima?: number;
+        preco_diaria?: Prisma.Decimal;
       };
     },
   ) {
@@ -148,6 +152,12 @@ export class QuartosService {
       tipo_quarto: {
         id: quarto.tipo_quarto.id.toString(),
         nome: quarto.tipo_quarto.nome,
+        ...(quarto.tipo_quarto.capacidade_maxima !== undefined && {
+          capacidade_maxima: quarto.tipo_quarto.capacidade_maxima,
+        }),
+        ...(quarto.tipo_quarto.preco_diaria !== undefined && {
+          preco_diaria: quarto.tipo_quarto.preco_diaria.toString(),
+        }),
       },
     };
   }
