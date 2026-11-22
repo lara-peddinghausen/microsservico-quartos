@@ -188,7 +188,7 @@ export class QuartosService {
 
       if (possuiReservasBloqueantes) {
         throw new ConflictException(
-          'Não é possível inativar um quarto com reservas confirmadas vigentes ou futuras, ou com hospedagem em andamento.',
+          'Não é possível inativar um quarto com reservas pendentes de pagamento ou confirmadas, vigentes ou futuras, ou com hospedagem em andamento.',
         );
       }
     }
