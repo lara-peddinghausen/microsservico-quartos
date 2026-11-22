@@ -5,10 +5,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuartoDto } from './dto/create-quarto.dto';
 import { UpdateQuartoDto } from './dto/update-quarto.dto';
 import { FiltroQuartosDto } from './dto/filtro-quartos.dto';
+import { ReservasClientService } from '../integracoes/reservas/reservas-client.service';
 
 @Injectable()
 export class QuartosService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reservasClient: ReservasClientService,
+  ) { }
 
   async create(dto: CreateQuartoDto) {
     // Verifica se o tipo de quarto existe
@@ -173,6 +177,22 @@ export class QuartosService {
       throw new NotFoundException('Quarto não encontrado.');
     }
 
+    // Verifica se a inativação precisa ser validada em Reservas
+    const deveValidarInativacao =
+      quartoExistente.status === 'ATIVO' &&
+      dto.status === 'INATIVO';
+
+    if (deveValidarInativacao) {
+      const possuiReservasBloqueantes =
+        await this.reservasClient.possuiReservasBloqueantes(id);
+
+      if (possuiReservasBloqueantes) {
+        throw new ConflictException(
+          'Não é possível inativar um quarto com reservas confirmadas vigentes ou futuras, ou com hospedagem em andamento.',
+        );
+      }
+    }
+
     // Verifica se o novo tipo de quarto existe
     if (dto.id_tipo_quarto !== undefined) {
       const tipoQuarto = await this.prisma.tipo_quarto.findUnique({
@@ -235,6 +255,39 @@ export class QuartosService {
       throw erro;
     }
   }
+
+  
+async findQuartosDisponiveis(checkin: string, checkout: string) {
+  const quartos = await this.prisma.quarto.findMany({
+    where: {
+      status: 'ATIVO',
+      disponibilidade: 'DISPONIVEL',
+    },
+  });
+
+  if (quartos.length === 0) {
+    return [];
+  }
+
+  const quartosIndisponiveis =
+    await this.reservasClient.consultarQuartosIndisponiveis(
+      quartos.map((quarto) => quarto.id),
+      checkin,
+      checkout,
+    );
+
+  const idsIndisponiveis = new Set(quartosIndisponiveis);
+
+  return quartos
+    .filter(
+      (quarto) => !idsIndisponiveis.has(quarto.id.toString()),
+    )
+    .map((quarto) => ({
+      ...quarto,
+      id: quarto.id.toString(),
+      id_tipo_quarto: quarto.id_tipo_quarto.toString(),
+    }));
+}
 
 
 }

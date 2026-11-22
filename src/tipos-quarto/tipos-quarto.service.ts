@@ -3,10 +3,14 @@ import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateTipoQuartoDto } from './dto/create-tipo-quarto.dto.js';
 import { UpdateTipoQuartoDto } from './dto/update-tipo-quarto.dto.js';
+import { ReservasClientService } from '../integracoes/reservas/reservas-client.service.js';
 
 @Injectable()
 export class TiposQuartoService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reservasClient: ReservasClientService,
+  ) { }
 
   private formatarTipoQuarto(
     tipoQuarto: Prisma.tipo_quartoGetPayload<{
@@ -254,5 +258,76 @@ export class TiposQuartoService {
       throw error;
     }
   }
+
+
+  async findTiposDisponiveis(checkin: string, checkout: string) {  // utiliza os dois microsserviços para identificar quais tipos podem ser reservados.
+    // Busca os quartos físicos ativos e disponíveis
+    const quartos = await this.prisma.quarto.findMany({
+      where: {
+        status: 'ATIVO',
+        disponibilidade: 'DISPONIVEL',
+      },
+      select: {
+        id: true,
+        id_tipo_quarto: true,
+      },
+    });
+
+    if (quartos.length === 0) {
+      return [];
+    }
+
+    // Consulta Reservas para identificar conflitos no período
+    const quartosIndisponiveis =
+      await this.reservasClient.consultarQuartosIndisponiveis(
+        quartos.map((quarto) => quarto.id),
+        checkin,
+        checkout,
+      );
+
+    const idsIndisponiveis = new Set(quartosIndisponiveis);
+
+    // Identifica os tipos que possuem unidades livres
+    const idsTiposDisponiveis = [
+      ...new Set(
+        quartos
+          .filter(
+            (quarto) => !idsIndisponiveis.has(quarto.id.toString()),
+          )
+          .map((quarto) => quarto.id_tipo_quarto),
+      ),
+    ];
+
+    if (idsTiposDisponiveis.length === 0) {
+      return [];
+    }
+
+    // Busca os dados completos dos tipos disponíveis
+    const tiposQuarto = await this.prisma.tipo_quarto.findMany({
+      where: {
+        id: {
+          in: idsTiposDisponiveis,
+        },
+      },
+      include: {
+        tipo_quarto_comodidade: {
+          include: {
+            comodidade: true,
+          },
+        },
+        cama: true,
+        foto: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    return tiposQuarto.map((tipoQuarto) =>
+      this.formatarTipoQuarto(tipoQuarto),
+    );
+  }
+
 
 }
