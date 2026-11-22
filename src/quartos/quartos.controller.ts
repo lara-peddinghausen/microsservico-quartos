@@ -6,6 +6,8 @@ import { CreateQuartoDto } from './dto/create-quarto.dto';
 import { ParseBigIntPipe } from '../common/pipes/parse-bigint.pipe';
 import { UpdateQuartoDto } from './dto/update-quarto.dto';
 import { FiltroQuartosDto } from './dto/filtro-quartos.dto';
+import { UseGuards } from '@nestjs/common';
+import { InternalApiKeyGuard } from '../common/guards/internal-api-key.guard';
 
 @ApiTags('Quartos')
 @Controller('quartos')
@@ -65,6 +67,7 @@ export class QuartosController {
 
 
   @Get('disponiveis')
+  @UseGuards(InternalApiKeyGuard)
   @ApiOperation({
     summary: 'Consultar quartos físicos disponíveis',
     description:

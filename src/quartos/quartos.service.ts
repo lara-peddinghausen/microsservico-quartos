@@ -256,38 +256,51 @@ export class QuartosService {
     }
   }
 
-  
-async findQuartosDisponiveis(checkin: string, checkout: string) {
-  const quartos = await this.prisma.quarto.findMany({
-    where: {
-      status: 'ATIVO',
-      disponibilidade: 'DISPONIVEL',
-    },
-  });
 
-  if (quartos.length === 0) {
-    return [];
+
+  async findQuartosDisponiveis(checkin: string, checkout: string) {
+    const quartos = await this.prisma.quarto.findMany({
+      where: {
+        status: 'ATIVO',
+        disponibilidade: 'DISPONIVEL',
+      },
+      include: {
+        tipo_quarto: true,
+      },
+    });
+
+    if (quartos.length === 0) {
+      return [];
+    }
+
+    const quartosIndisponiveis =
+      await this.reservasClient.consultarQuartosIndisponiveis(
+        quartos.map((quarto) => quarto.id),
+        checkin,
+        checkout,
+      );
+
+    const idsIndisponiveis = new Set(quartosIndisponiveis);
+
+    return quartos
+      .filter(
+        (quarto) => !idsIndisponiveis.has(quarto.id.toString()),
+      )
+      .map((quarto) => ({
+        id: quarto.id.toString(),
+        id_tipo_quarto: quarto.id_tipo_quarto.toString(),
+        numero: quarto.numero,
+        status: quarto.status,
+        disponibilidade: quarto.disponibilidade,
+        tipo_quarto: {
+          id: quarto.tipo_quarto.id.toString(),
+          nome: quarto.tipo_quarto.nome,
+          capacidade_maxima: quarto.tipo_quarto.capacidade_maxima,
+          preco_diaria: quarto.tipo_quarto.preco_diaria.toString(),
+        },
+      }));
   }
 
-  const quartosIndisponiveis =
-    await this.reservasClient.consultarQuartosIndisponiveis(
-      quartos.map((quarto) => quarto.id),
-      checkin,
-      checkout,
-    );
-
-  const idsIndisponiveis = new Set(quartosIndisponiveis);
-
-  return quartos
-    .filter(
-      (quarto) => !idsIndisponiveis.has(quarto.id.toString()),
-    )
-    .map((quarto) => ({
-      ...quarto,
-      id: quarto.id.toString(),
-      id_tipo_quarto: quarto.id_tipo_quarto.toString(),
-    }));
-}
 
 
 }
