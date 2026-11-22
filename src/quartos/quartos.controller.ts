@@ -1,6 +1,6 @@
 
 import { Body, Controller, Post, Get, Param, Patch, BadRequestException, Query } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOperation, ApiTags, ApiParam, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOperation, ApiTags, ApiParam, ApiOkResponse, ApiQuery, ApiHeader } from '@nestjs/swagger';
 import { QuartosService } from './quartos.service';
 import { CreateQuartoDto } from './dto/create-quarto.dto';
 import { ParseBigIntPipe } from '../common/pipes/parse-bigint.pipe';
@@ -68,6 +68,11 @@ export class QuartosController {
 
   @Get('disponiveis')
   @UseGuards(InternalApiKeyGuard)
+  @ApiHeader({
+    name: 'x-internal-api-key',
+    description: 'Chave de autenticação entre microsserviços',
+    required: true,
+  })
   @ApiOperation({
     summary: 'Consultar quartos físicos disponíveis',
     description:
