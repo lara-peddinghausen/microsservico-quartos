@@ -1,11 +1,10 @@
 
-import { Body, Controller, Post, Get, Param, Patch } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOperation, ApiTags, ApiParam, ApiOkResponse } from '@nestjs/swagger';
+import { Body, Controller, Post, Get, Param, Patch, BadRequestException, Query } from '@nestjs/common';
+import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOperation, ApiTags, ApiParam, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
 import { QuartosService } from './quartos.service';
 import { CreateQuartoDto } from './dto/create-quarto.dto';
 import { ParseBigIntPipe } from '../common/pipes/parse-bigint.pipe';
 import { UpdateQuartoDto } from './dto/update-quarto.dto';
-import { Query } from '@nestjs/common';
 import { FiltroQuartosDto } from './dto/filtro-quartos.dto';
 
 @ApiTags('Quartos')
@@ -63,6 +62,68 @@ export class QuartosController {
   async findAll(@Query() filtros: FiltroQuartosDto) {
     return this.quartosService.findAll(filtros);
   }
+
+
+  @Get('disponiveis')
+  @ApiOperation({
+    summary: 'Consultar quartos físicos disponíveis',
+    description:
+      'Retorna os quartos físicos disponíveis no período informado. Consulta destinada ao administrador.',
+  })
+  @ApiQuery({
+    name: 'checkin',
+    type: String,
+    example: '2026-12-16',
+    description: 'Data de entrada (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'checkout',
+    type: String,
+    example: '2026-12-19',
+    description: 'Data de saída (YYYY-MM-DD)',
+  })
+  @ApiOkResponse({
+    description: 'Quartos disponíveis retornados com sucesso',
+  })
+  @ApiBadRequestResponse({
+    description: 'Datas inválidas ou período incorreto',
+  })
+  async findQuartosDisponiveis(
+    @Query('checkin') checkin: string,
+    @Query('checkout') checkout: string,
+  ) {
+    const dataValida = (valor: string): boolean => {
+      if (
+        typeof valor !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(valor)
+      ) {
+        return false;
+      }
+
+      const data = new Date(`${valor}T00:00:00Z`);
+
+      return (
+        !Number.isNaN(data.getTime()) &&
+        data.toISOString().slice(0, 10) === valor
+      );
+    };
+
+    if (
+      !dataValida(checkin) ||
+      !dataValida(checkout) ||
+      checkout <= checkin
+    ) {
+      throw new BadRequestException(
+        'Informe datas válidas, com checkout posterior ao checkin.',
+      );
+    }
+
+    return this.quartosService.findQuartosDisponiveis(
+      checkin,
+      checkout,
+    );
+  }
+
 
   @Get(':id')
   @ApiOperation({

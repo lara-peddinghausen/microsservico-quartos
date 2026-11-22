@@ -1,6 +1,6 @@
 
-import { Body, Controller, Post, Get, Param, Patch, UploadedFile, UseInterceptors, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, Delete, HttpCode, HttpStatus, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiParam, ApiOkResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiNotFoundResponse, ApiConflictResponse, ApiConsumes, ApiBody, ApiNoContentResponse } from '@nestjs/swagger';
+import { Body, Controller, Post, Get, Param, Patch, UploadedFile, UseInterceptors, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, Delete, HttpCode, HttpStatus, Res, BadRequestException, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiParam, ApiOkResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiNotFoundResponse, ApiConflictResponse, ApiConsumes, ApiBody, ApiNoContentResponse, ApiQuery } from '@nestjs/swagger';
 import { TiposQuartoService } from './tipos-quarto.service.js';
 import { CreateTipoQuartoDto } from './dto/create-tipo-quarto.dto.js';
 import { UpdateTipoQuartoDto } from './dto/update-tipo-quarto.dto.js';
@@ -28,6 +28,66 @@ export class TiposQuartoController {
   })
   findAll() {
     return this.tiposQuartoService.findAll();
+  }
+
+  @Get('disponiveis')  // recebe as datas, valida o período e chama o método findDisponiveis no TiposQuartoService
+  @ApiOperation({
+    summary: 'Consultar tipos de quarto disponíveis',
+    description:
+      'Retorna os tipos de quarto que possuem pelo menos uma unidade disponível no período informado.',
+  })
+  @ApiQuery({
+    name: 'checkin',
+    type: String,
+    example: '2026-12-10',
+    description: 'Data de entrada (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'checkout',
+    type: String,
+    example: '2026-12-15',
+    description: 'Data de saída (YYYY-MM-DD)',
+  })
+  @ApiOkResponse({
+    description: 'Tipos de quarto disponíveis retornados com sucesso',
+  })
+  @ApiBadRequestResponse({
+    description: 'Datas inválidas ou período incorreto',
+  })
+  async findDisponiveis(
+    @Query('checkin') checkin: string,
+    @Query('checkout') checkout: string,
+  ) {
+    const dataValida = (valor: string): boolean => {
+      if (
+        typeof valor !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(valor)
+      ) {
+        return false;
+      }
+
+      const data = new Date(`${valor}T00:00:00Z`);
+
+      return (
+        !Number.isNaN(data.getTime()) &&
+        data.toISOString().slice(0, 10) === valor
+      );
+    };
+
+    if (
+      !dataValida(checkin) ||
+      !dataValida(checkout) ||
+      checkout <= checkin
+    ) {
+      throw new BadRequestException(
+        'Informe datas válidas, com checkout posterior ao checkin.',
+      );
+    }
+
+    return this.tiposQuartoService.findTiposDisponiveis(
+      checkin,
+      checkout,
+    );
   }
 
   @Get(':id')
@@ -227,5 +287,6 @@ export class TiposQuartoController {
     resposta.setHeader('Content-Disposition', 'inline');  // Indica que a imagem pode ser exibida no navegador
     resposta.send(buffer);
   }
+
 
 }
