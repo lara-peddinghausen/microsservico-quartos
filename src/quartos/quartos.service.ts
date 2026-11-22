@@ -229,6 +229,8 @@ export class QuartosService {
           }),
           ...(dto.status !== undefined && {
             status: dto.status,
+            disponibilidade:
+              dto.status === 'ATIVO' ? 'DISPONIVEL' : 'INDISPONIVEL',
           }),
         },
         include: {
@@ -255,8 +257,6 @@ export class QuartosService {
       throw erro;
     }
   }
-
-
 
   async findQuartosDisponiveis(checkin: string, checkout: string) {
     const quartos = await this.prisma.quarto.findMany({
