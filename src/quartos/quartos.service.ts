@@ -4,6 +4,7 @@ import { quarto_disponibilidade, Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuartoDto } from './dto/create-quarto.dto';
 import { UpdateQuartoDto } from './dto/update-quarto.dto';
+import { FiltroQuartosDto } from './dto/filtro-quartos.dto';
 
 @Injectable()
 export class QuartosService {
@@ -72,9 +73,23 @@ export class QuartosService {
     }
   }
 
+  async findAll(filtros: FiltroQuartosDto) {
+    const where: Prisma.quartoWhereInput = {};  // Prisma.quartoWhereInput é um tipo gerado pelo Prisma que representa os filtros aceitos na consulta da tabela quarto.
 
-  async findAll() {
+    if (filtros.id_tipo_quarto !== undefined) {
+      where.id_tipo_quarto = BigInt(filtros.id_tipo_quarto);
+    }
+
+    if (filtros.status !== undefined) {
+      where.status = filtros.status;
+    }
+
+    if (filtros.numero !== undefined) {
+      where.numero = filtros.numero;
+    }
+
     const quartos = await this.prisma.quarto.findMany({
+      where,
       include: {
         tipo_quarto: {
           select: {

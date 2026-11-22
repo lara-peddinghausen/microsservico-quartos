@@ -1,10 +1,12 @@
 
-import { Body, Controller, Post, Get, Param, Patch  } from '@nestjs/common';
+import { Body, Controller, Post, Get, Param, Patch } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOperation, ApiTags, ApiParam, ApiOkResponse } from '@nestjs/swagger';
 import { QuartosService } from './quartos.service';
 import { CreateQuartoDto } from './dto/create-quarto.dto';
 import { ParseBigIntPipe } from '../common/pipes/parse-bigint.pipe';
 import { UpdateQuartoDto } from './dto/update-quarto.dto';
+import { Query } from '@nestjs/common';
+import { FiltroQuartosDto } from './dto/filtro-quartos.dto';
 
 @ApiTags('Quartos')
 @Controller('quartos')
@@ -49,13 +51,17 @@ export class QuartosController {
   @Get()
   @ApiOperation({
     summary: 'Listar quartos',
-    description: 'Retorna todos os quartos cadastrados e seus tipos.',
+    description:
+      'Lista os quartos cadastrados, permitindo filtrar por tipo de quarto, status e número.',
   })
   @ApiOkResponse({
     description: 'Lista de quartos retornada com sucesso.',
   })
-  findAll() {
-    return this.quartosService.findAll();
+  @ApiBadRequestResponse({
+    description: 'Parâmetros de filtro inválidos.',
+  })
+  async findAll(@Query() filtros: FiltroQuartosDto) {
+    return this.quartosService.findAll(filtros);
   }
 
   @Get(':id')
@@ -82,36 +88,36 @@ export class QuartosController {
   }
 
 
-@Patch(':id')
-@ApiOperation({
-  summary: 'Atualizar quarto',
-  description:
-    'Atualiza os dados administrativos de um quarto. ' +
-    'A disponibilidade não pode ser alterada diretamente.',
-})
-@ApiParam({
-  name: 'id',
-  description: 'ID do quarto.',
-  example: '1',
-})
-@ApiOkResponse({
-  description: 'Quarto atualizado com sucesso.',
-})
-@ApiBadRequestResponse({
-  description: 'Dados inválidos.',
-})
-@ApiNotFoundResponse({
-  description: 'Quarto ou tipo de quarto não encontrado.',
-})
-@ApiConflictResponse({
-  description: 'Número de quarto já cadastrado.',
-})
-update(
-  @Param('id', ParseBigIntPipe) id: bigint,
-  @Body() dto: UpdateQuartoDto,
-) {
-  return this.quartosService.update(id, dto);
-}
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Atualizar quarto',
+    description:
+      'Atualiza os dados administrativos de um quarto. ' +
+      'A disponibilidade não pode ser alterada diretamente.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do quarto.',
+    example: '1',
+  })
+  @ApiOkResponse({
+    description: 'Quarto atualizado com sucesso.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Quarto ou tipo de quarto não encontrado.',
+  })
+  @ApiConflictResponse({
+    description: 'Número de quarto já cadastrado.',
+  })
+  update(
+    @Param('id', ParseBigIntPipe) id: bigint,
+    @Body() dto: UpdateQuartoDto,
+  ) {
+    return this.quartosService.update(id, dto);
+  }
 
 
 }
