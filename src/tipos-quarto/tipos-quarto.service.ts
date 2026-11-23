@@ -3,10 +3,14 @@ import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateTipoQuartoDto } from './dto/create-tipo-quarto.dto.js';
 import { UpdateTipoQuartoDto } from './dto/update-tipo-quarto.dto.js';
+import { QuartosService } from '../quartos/quartos.service';
 
 @Injectable()
 export class TiposQuartoService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly quartosService: QuartosService
+  ) { }
 
   private formatarTipoQuarto(
     tipoQuarto: Prisma.tipo_quartoGetPayload<{
@@ -253,6 +257,50 @@ export class TiposQuartoService {
 
       throw error;
     }
+  }
+
+
+  async findTiposDisponiveis(checkin: string, checkout: string) {
+    // Busca os quartos livres utilizando a lógica compartilhada
+    const quartos = await this.quartosService.buscarQuartosLivresNoPeriodo(
+      checkin,
+      checkout,
+    );
+
+    if (quartos.length === 0) {
+      return [];
+    }
+
+    // Identifica os tipos que possuem pelo menos um quarto livre
+    const idsTiposDisponiveis = [
+      ...new Set(quartos.map((quarto) => quarto.id_tipo_quarto)),
+    ];
+
+    // Busca os dados completos dos tipos disponíveis
+    const tiposQuarto = await this.prisma.tipo_quarto.findMany({
+      where: {
+        id: {
+          in: idsTiposDisponiveis,
+        },
+      },
+      include: {
+        tipo_quarto_comodidade: {
+          include: {
+            comodidade: true,
+          },
+        },
+        cama: true,
+        foto: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    return tiposQuarto.map((tipoQuarto) =>
+      this.formatarTipoQuarto(tipoQuarto),
+    );
   }
 
 }

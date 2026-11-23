@@ -5,10 +5,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuartoDto } from './dto/create-quarto.dto';
 import { UpdateQuartoDto } from './dto/update-quarto.dto';
 import { FiltroQuartosDto } from './dto/filtro-quartos.dto';
+import { ReservasClientService } from '../integracoes/reservas/reservas-client.service';
 
 @Injectable()
 export class QuartosService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reservasClient: ReservasClientService,
+  ) { }
 
   async create(dto: CreateQuartoDto) {
     // Verifica se o tipo de quarto existe
@@ -114,6 +118,8 @@ export class QuartosService {
           select: {
             id: true,
             nome: true,
+            capacidade_maxima: true,
+            preco_diaria: true,
           },
         },
       },
@@ -136,6 +142,8 @@ export class QuartosService {
       tipo_quarto: {
         id: bigint;
         nome: string;
+        capacidade_maxima?: number;
+        preco_diaria?: Prisma.Decimal;
       };
     },
   ) {
@@ -148,6 +156,12 @@ export class QuartosService {
       tipo_quarto: {
         id: quarto.tipo_quarto.id.toString(),
         nome: quarto.tipo_quarto.nome,
+        ...(quarto.tipo_quarto.capacidade_maxima !== undefined && {
+          capacidade_maxima: quarto.tipo_quarto.capacidade_maxima,
+        }),
+        ...(quarto.tipo_quarto.preco_diaria !== undefined && {
+          preco_diaria: quarto.tipo_quarto.preco_diaria.toString(),
+        }),
       },
     };
   }
@@ -161,6 +175,22 @@ export class QuartosService {
 
     if (!quartoExistente) {
       throw new NotFoundException('Quarto não encontrado.');
+    }
+
+    // Verifica se a inativação precisa ser validada em Reservas
+    const deveValidarInativacao =
+      quartoExistente.status === 'ATIVO' &&
+      dto.status === 'INATIVO';
+
+    if (deveValidarInativacao) {
+      const possuiReservasBloqueantes =
+        await this.reservasClient.possuiReservasBloqueantes(id);
+
+      if (possuiReservasBloqueantes) {
+        throw new ConflictException(
+          'Não é possível inativar um quarto com reservas pendentes de pagamento ou confirmadas, vigentes ou futuras, ou com hospedagem em andamento.',
+        );
+      }
     }
 
     // Verifica se o novo tipo de quarto existe
@@ -199,6 +229,8 @@ export class QuartosService {
           }),
           ...(dto.status !== undefined && {
             status: dto.status,
+            disponibilidade:
+              dto.status === 'ATIVO' ? 'DISPONIVEL' : 'INDISPONIVEL',
           }),
         },
         include: {
@@ -226,5 +258,57 @@ export class QuartosService {
     }
   }
 
+  async buscarQuartosLivresNoPeriodo(
+    checkin: string,
+    checkout: string,
+  ) {
+    const quartos = await this.prisma.quarto.findMany({
+      where: {
+        status: 'ATIVO',
+        disponibilidade: 'DISPONIVEL',
+      },
+      include: {
+        tipo_quarto: true,
+      },
+    });
+
+    if (quartos.length === 0) {
+      return [];
+    }
+
+    const quartosIndisponiveis =
+      await this.reservasClient.consultarQuartosIndisponiveis(
+        quartos.map((quarto) => quarto.id),
+        checkin,
+        checkout,
+      );
+
+    const idsIndisponiveis = new Set(quartosIndisponiveis);
+
+    return quartos.filter(
+      (quarto) => !idsIndisponiveis.has(quarto.id.toString()),
+    );
+  }
+
+  async findQuartosDisponiveis(checkin: string, checkout: string) {
+    const quartos = await this.buscarQuartosLivresNoPeriodo(
+      checkin,
+      checkout,
+    );
+
+    return quartos.map((quarto) => ({
+      id: quarto.id.toString(),
+      id_tipo_quarto: quarto.id_tipo_quarto.toString(),
+      numero: quarto.numero,
+      status: quarto.status,
+      disponibilidade: quarto.disponibilidade,
+      tipo_quarto: {
+        id: quarto.tipo_quarto.id.toString(),
+        nome: quarto.tipo_quarto.nome,
+        capacidade_maxima: quarto.tipo_quarto.capacidade_maxima,
+        preco_diaria: quarto.tipo_quarto.preco_diaria.toString(),
+      },
+    }));
+  }
 
 }
